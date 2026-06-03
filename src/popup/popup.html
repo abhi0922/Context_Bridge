@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Context Bridge</h1>
+      <div class="header-actions">
+        <span id="groq-badge" class="badge badge-hidden">Groq</span>
+        <button id="btn-settings" class="btn-icon" title="Settings">&#9881;</button>
+        <span id="status-badge">Inactive</span>
+      </div>
+    </header>
+
+    <div id="source-section" class="section">
+      <div class="row">
+        <span>Current Platform</span>
+        <span id="source-platform" class="value">Detecting...</span>
+      </div>
+      <div class="row">
+        <span>Extension</span>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-enabled" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div id="migration-section" class="section">
+      <label for="destination-input" class="label">Continue in...</label>
+      <div id="input-row">
+        <input
+          type="text"
+          id="destination-input"
+          placeholder="e.g. claude, gemini, perplexity..."
+          spellcheck="false"
+          autocomplete="off"
+        />
+        <button id="btn-continue" class="btn btn-primary" disabled>Continue</button>
+      </div>
+      <div id="match-info" class="hidden">
+        <span id="match-label"></span>
+      </div>
+    </div>
+
+    <div id="status-section" class="hidden section">
+      <div id="status-message" class="status-message"></div>
+      <div id="progress-bar" class="hidden">
+        <div id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div id="summarization-info" class="hidden section info-box">
+      <div class="info-row">
+        <span class="info-label">Summarization</span>
+        <span id="summarization-status" class="info-value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Compression</span>
+        <span id="compression-ratio" class="info-value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Model</span>
+        <span id="summarization-model" class="info-value">-</span>
+      </div>
+    </div>
+
+    <div id="recent-section" class="section hidden">
+      <span class="label-sm">Recent</span>
+      <div id="recent-list"></div>
+    </div>
+
+    <div id="output-section" class="hidden section">
+      <label class="label-sm">Extracted Context</label>
+      <textarea id="output-text" readonly placeholder="Context preview..."></textarea>
+    </div>
+
+    <div id="fallback-section" class="hidden section">
+      <div class="fallback-box">
+        <span class="fallback-text">Summarization failed. Send raw conversation?</span>
+        <div class="fallback-actions">
+          <button id="btn-fallback-yes" class="btn btn-small btn-warning">Send Raw</button>
+          <button id="btn-fallback-no" class="btn btn-small btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="api-key-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <h2>Groq API Key Required</h2>
+        <p class="modal-desc">Enter your Groq API key to enable AI-powered context summarization.</p>
+        <input
+          type="password"
+          id="api-key-input"
+          placeholder="gsk_..."
+          spellcheck="false"
+          autocomplete="off"
+        />
+        <div id="api-key-error" class="hidden error-text"></div>
+        <div class="modal-actions">
+          <button id="btn-save-key" class="btn btn-primary">Save Key</button>
+          <button id="btn-cancel-key" class="btn btn-secondary">Cancel</button>
+        </div>
+        <p class="modal-footnote">Your key is stored locally in chrome.storage.local and never sent anywhere except Groq API.</p>
+      </div>
+    </div>
+
+    <div id="settings-panel" class="hidden settings-panel">
+      <div class="settings-header">
+        <h3>Settings</h3>
+        <button id="btn-close-settings" class="btn-icon">&times;</button>
+      </div>
+
+      <div class="settings-group">
+        <label class="settings-label">Groq API Key</label>
+        <div class="key-status-row">
+          <span id="key-status-indicator" class="key-dot key-dot-absent"></span>
+          <span id="key-status-text" class="key-status-text">Not configured</span>
+        </div>
+        <div class="settings-btn-row">
+          <button id="btn-update-key" class="btn btn-small btn-primary">Update Key</button>
+          <button id="btn-remove-key" class="btn btn-small btn-danger">Remove</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <label class="settings-label" for="settings-model">Model</label>
+        <select id="settings-model" class="settings-select">
+          <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+          <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+          <option value="llama3-70b-8192">Llama 3 70B</option>
+          <option value="llama3-8b-8192">Llama 3 8B</option>
+          <option value="gemma2-9b-it">Gemma 2 9B</option>
+        </select>
+      </div>
+
+      <div class="settings-group">
+        <label class="row">
+          <span>Auto-summarize before migration</span>
+          <label class="toggle">
+            <input type="checkbox" id="settings-autosummarize" checked />
+            <span class="slider"></span>
+          </label>
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <label class="settings-label" for="settings-tokenlimit">Token Limit</label>
+        <select id="settings-tokenlimit" class="settings-select">
+          <option value="4000">4K tokens</option>
+          <option value="8000" selected>8K tokens</option>
+          <option value="16000">16K tokens</option>
+          <option value="32000">32K tokens</option>
+        </select>
+      </div>
+
+      <div class="settings-group">
+        <label class="settings-label" for="settings-temperature">Temperature</label>
+        <input type="range" id="settings-temperature" min="0" max="1" step="0.1" value="0.3" />
+        <span id="temperature-value" class="range-value">0.3</span>
+      </div>
+    </div>
+
+    <footer>
+      <span id="version">v3</span>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
